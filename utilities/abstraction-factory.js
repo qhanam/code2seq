@@ -1,4 +1,3 @@
-
 const fs = require("fs");
 const esprima = require("esprima");
 const applyDepthAbstraction = require("./depth-abstraction.js");

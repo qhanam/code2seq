@@ -16,6 +16,8 @@ var argv = require('yargs')
 	.describe('topn', 'The path to the top N words (the non-reserved vocab)')
 	.describe('seq', 'The path the sequences will be output to')
 	.describe('vocab', 'The path the vocab will be output to')
+	.describe('buckets', 'The number of project buckets')
+	.default('buckets', 10)
 	.help('h')
 	.alias('h', 'help')
 	.argv;
@@ -39,6 +41,7 @@ var lineReader = require('readline').createInterface({
 let ctr = 0;
 let topN = fs.readFileSync(argv.topn, 'utf-8').split("\n"); // Top N non-reserved words
 let code2seq = new Code2Seq(topN);
+let bucketAssignments = new Map(); // Quickly lookup which bucket a project is assigned to
 
 fse.ensureFileSync(argv.seq + ".buggy");
 fse.ensureFileSync(argv.seq + ".correct");
@@ -50,6 +53,14 @@ lineReader.on('line', function (line) {
 
 	/* Read the sequence pairs for this commit-file. */
 	let comfile = JSON.parse(line);
+
+	/* Get the current bucket. */
+	let bucket = bucketAssignments.get(comfile.projectID);
+
+	if(bucket === undefined) {
+		bucket = Math.floor((Math.random() * 10));
+		bucketAssignments.set(comfile.projectID, bucket);
+	}
 
 	ctr++;
 	console.log("%d: %s - %s", ctr, comfile.url, comfile.fileName);
@@ -66,6 +77,8 @@ lineReader.on('line', function (line) {
 		let beforeCode = pair.before.replace(/^function\s*\(/, "function __abs__dummy(");
 		let afterCode = pair.after.replace(/^function\s*\(/, "function __abs__dummy(");
 
+		let file = null;
+
 		try {
 			beforeAST = esprima.parse(beforeCode);
 			afterAST = esprima.parse(afterCode);
@@ -80,9 +93,23 @@ lineReader.on('line', function (line) {
 
 		if(beforeSeq === null || afterSeq === null) continue;
 
-		/* Store the sequence in a file. */
-		fs.appendFileSync(argv.seq + ".buggy", beforeSeq);
-		fs.appendFileSync(argv.seq + ".correct", afterSeq);
+		/* Store the sequence in a file. We have a few rules to consider:
+		 * 1. Projects get evenly distributed across 10 buckets (for 10-fold cross validation).
+		 * 2. Real-world repairs (type=REPAIR) go into a special evaluation set.
+		 * 		The evaluation set is split into the same 10 buckets as the training
+		 * 		data. */
+
+		if(pair.type === "NOMINAL")
+			file = argv.seq + "-nominal" + bucket;
+		else if(pair.type === "MUTANT_REPAIR")
+			file = argv.seq + "-mutant" + bucket;
+		else if(pair.type === "REPAIR")
+			file = argv.seq + "-repair" + bucket;
+		else
+			file = argv.seq + "-error" + bucket;
+
+		fs.appendFileSync(file + ".buggy", beforeSeq);
+		fs.appendFileSync(file + ".correct", afterSeq);
 
 	}
 
