@@ -38,20 +38,9 @@
 		},
 
 		VariableDeclaration: function(node) {
-
-			let seq = [];
-
-			for(let i = 0; i < node.declarations.length; i++) {
-				let declarator = node.declarations[i];
-				join(seq, expressionGenerator[declarator.type](declarator));
-				if(i !== node.declarations.length - 1) seq.push(',');
-			}
-
-			seq.unshift('var');
+			let seq = expressionGenerator.VariableDeclaration(node);
 			seq.push(';');
-
-			return seq
-
+			return seq;
 		},
 
 		ExpressionStatement: function(node) {
@@ -108,6 +97,35 @@
 			seq.push(':');
 			join(seq, statementGenerator[body.type](body));
 			return seq;
+		},
+
+		ForStatement: function(node) {
+			let seq = ['for','('],
+				init = node.init,
+				test = node.test,
+				update = node.update,
+				body = node.body;
+			if(init !== null) join(seq, expressionGenerator[init.type](init));
+			seq.push(';');
+			if(test !== null) join(seq, expressionGenerator[test.type](test));
+			seq.push(';');
+			if(update !== null) join(seq, expressionGenerator[update.type](update));
+			seq.push(')');
+			join(seq, statementGenerator[body.type](body));
+			return seq;
+		},
+
+		ForInStatement: function(node) {
+			let seq = ['for','('],
+				left = node.left,
+				right = node.right,
+				body = node.body;
+			join(seq, expressionGenerator[left.type](left));
+			seq.push('in');
+			join(seq, expressionGenerator[right.type](right));
+			seq.push(')');
+			join(seq, statementGenerator[body.type](body));
+			return seq;
 		}
 
 	};
@@ -160,6 +178,56 @@
 			join(seq, expressionGenerator[consequent.type](consequent));
 			seq.push(':');
 			join(seq, expressionGenerator[alternate.type](alternate));
+			return seq;
+		},
+
+		MemberExpression: function(node) {
+			let seq = [],
+				object = node.object,
+				property = node.property;
+			join(seq, expressionGenerator[object.type](object));
+			if(node.computed) {
+				seq.push('[');
+				join(seq, expressionGenerator[property.type](property));
+				seq.push(']');
+			}
+			else {
+				seq.push('.');
+				join(seq, expressionGenerator[property.type](property));
+			}
+			return seq;
+		},
+
+		VariableDeclaration: function(node) {
+
+			let seq = [node.kind];
+
+			for(let i = 0; i < node.declarations.length; i++) {
+				let declarator = node.declarations[i];
+				join(seq, expressionGenerator[declarator.type](declarator));
+				if(i !== node.declarations.length - 1) seq.push(',');
+			}
+
+			return seq
+
+		},
+
+		EmptyExpression: function(node) {
+			return [];
+		},
+
+		CallExpression: function(node) {
+			let seq = [],
+				callee = node.callee,
+				args = node.arguments;
+			join(seq, expressionGenerator[callee.type](callee));
+			seq.push('(');
+			for(let i = 0; i < args.length; i++) {
+				let arg = args[i];
+				join(seq, expressionGenerator[arg.type](arg));
+				if(i !== args.length - 1) seq.push(',');
+			}
+			seq.push(')');
 			return seq;
 		}
 

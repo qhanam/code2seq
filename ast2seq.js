@@ -4,12 +4,12 @@
  */
 
 const fs = require("fs");
-const fse = require('fs-extra'); 
+const fse = require('fs-extra');
 const esprima = require("esprima");
 const esseq = require("./utilities/esseq.js");
 
 /* The test case. */
-const code = "do { } while (true);";
+const code = "foo();";
 const ast = esprima.parseScript(code);
 
 /* Generate the sequence from the test case. */
