@@ -9,7 +9,7 @@ const esprima = require("esprima");
 const esseq = require("./utilities/esseq.js");
 
 /* The test case. */
-const code = "foo();";
+const code = "function foo(a, b) { a = b; }";
 const ast = esprima.parseScript(code);
 
 /* Generate the sequence from the test case. */

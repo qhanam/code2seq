@@ -43,6 +43,11 @@
 			return seq;
 		},
 
+		FunctionDeclaration: function(node) {
+			let seq = expressionGenerator.FunctionDeclaration(node);
+			return seq;
+		},
+
 		ExpressionStatement: function(node) {
 			let expression = node.expression;
 			let seq = expressionGenerator[expression.type](expression);
@@ -228,6 +233,23 @@
 				if(i !== args.length - 1) seq.push(',');
 			}
 			seq.push(')');
+			return seq;
+		},
+
+		FunctionDeclaration: function(node) {
+			let seq = ['function'],
+				id = node.id,
+				params = node.params,
+				body = node.body;
+			if(id !== null)	join(seq, expressionGenerator[id.type](id));
+			seq.push('(');
+			for(let i = 0; i < params.length; i++) {
+				let param = params[i];
+				join(seq, expressionGenerator[param.type](param));
+				if(i !== params.length - 1) seq.push(',');
+			}
+			seq.push(')');
+			join(seq, statementGenerator[body.type](body));
 			return seq;
 		}
 
