@@ -155,7 +155,6 @@
 		ReturnStatement: function(node) {
 			let seq = ['return'],
 				argument = node.argument;
-			console.log(argument.type);
 			if(argument !== null) join(seq, expressionGenerator[argument.type](argument));
 			seq.push(';');
 			return seq;
@@ -216,7 +215,7 @@
 		},
 
 		Literal: function(node) {
-			return [node.raw];
+			return [node.raw.replace(/\s+/g, '%20')];
 		},
 
 		ArrayExpression: function(node) {
@@ -446,6 +445,7 @@
 	function generate(node) { 
 
 		/* TODO: Recursively generate sequence for node. */
+		console.log(node);
 		return statementGenerator[node.type](node).join(' ');
 	
 	}
