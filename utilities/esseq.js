@@ -196,6 +196,10 @@
 				join(seq, generateStatement(finalizer));
 			}
 			return seq;
+		},
+
+		Identifier: function(node) {
+			return expressionGenerator.Identifier(node);
 		}
 
 	};
@@ -204,12 +208,15 @@
 	expressionGenerator = {
 
 		VariableDeclarator: function(node) {
-			let id, init;
-			id = expressionGenerator[node.id.type](node.id);
-			if(node.init === null) return [id];
-			id.push('=');
-			init = expressionGenerator[node.init.type](node.init);
-			return join(id, init);
+			let seq = [], 
+				id = node.id,
+				init = node.init;
+			join(seq, generateExpression(id));
+			if(init !== null) {
+				seq.push('=');
+				join(seq, generateExpression(init));
+			}
+			return seq;
 		},
 
 		Identifier: function(node) {

@@ -43,10 +43,10 @@ let topN = fs.readFileSync(argv.topn, 'utf-8').split("\n"); // Top N non-reserve
 let code2seq = new Code2Seq();
 let bucketAssignments = new Map(); // Quickly lookup which bucket a project is assigned to
 
-fse.ensureFileSync(argv.seq + ".buggy");
-fse.ensureFileSync(argv.seq + ".correct");
-fs.writeFileSync(argv.seq + ".buggy", "");
-fs.writeFileSync(argv.seq + ".correct", "");
+//fse.ensureFileSync(argv.seq + ".buggy");
+//fse.ensureFileSync(argv.seq + ".correct");
+//fs.writeFileSync(argv.seq + ".buggy", "");
+//fs.writeFileSync(argv.seq + ".correct", "");
 
 /* Process a commit-file. */
 lineReader.on('line', function (line) {
@@ -96,18 +96,18 @@ lineReader.on('line', function (line) {
 		 * 		The evaluation set is split into the same 10 buckets as the training
 		 * 		data. */
 
-		if(pair.type === "NOMINAL")
+		if(pair.labels.length === 0)
 			file = argv.seq + "-nominal" + bucket;
-		else if(pair.type === "MUTATION_CANDIDATE")
+		else if(pair.labels.includes("MUTATION_CANDIDATE"))
 			file = argv.seq + "-candidate" + bucket;
-		else if(pair.type === "MUTANT")
+		else if(pair.labels.includes("MUTANT"))
 			file = argv.seq + "-mutant" + bucket;
-		else if(pair.type === "REPAIR")
+		else if(pair.labels.includes("REPAIR"))
 			file = argv.seq + "-repair" + bucket;
 		else
 			file = argv.seq + "-error" + bucket;
 
-		fs.appendFileSync(file + ".seq", afterSeq);
+		fs.appendFileSync(file + ".seq", afterSeq + "\n");
 
 	}
 
