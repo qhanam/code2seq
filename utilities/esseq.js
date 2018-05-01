@@ -511,7 +511,7 @@
 			node['change-noprop'] = node.change;
 
 		/* Recursively generate sequence for node. */
-		return generateStatement(node).join(' ');
+		return generateStatement(node);
 
 	}
 

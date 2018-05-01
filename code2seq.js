@@ -42,11 +42,7 @@ let ctr = 0;
 let topN = fs.readFileSync(argv.topn, 'utf-8').split("\n"); // Top N non-reserved words
 let code2seq = new Code2Seq();
 let bucketAssignments = new Map(); // Quickly lookup which bucket a project is assigned to
-
-//fse.ensureFileSync(argv.seq + ".buggy");
-//fse.ensureFileSync(argv.seq + ".correct");
-//fs.writeFileSync(argv.seq + ".buggy", "");
-//fs.writeFileSync(argv.seq + ".correct", "");
+let vocab = new Set();
 
 /* Process a commit-file. */
 lineReader.on('line', function (line) {
@@ -77,18 +73,16 @@ lineReader.on('line', function (line) {
 		let file = null;
 
 		/* Build the abstracted sequences. */
-		if(beforeAST !== null)
-			code2seq.ast2Seq(beforeAST, topN);
 		code2seq.ast2Seq(afterAST, topN);
 
 		/* Convert the AST into a word sequence. */
-		if(beforeAST !== null)
-			beforeSeq = esseq.generate(beforeAST);
-		else
-			beforeSeq = "";
 		afterSeq = esseq.generate(afterAST);
+		if(afterSeq === null) continue;
 
-		if(beforeSeq === null || afterSeq === null) continue;
+		/* Update the vocab with the words in the sequence. */
+		for(let i = 0; i < afterSeq.length; i++) {
+			vocab.add(afterSeq[i]);
+		}
 
 		/* Store the sequence in a file. We have a few rules to consider:
 		 * 1. Projects get evenly distributed across 10 buckets (for 10-fold cross validation).
@@ -107,7 +101,7 @@ lineReader.on('line', function (line) {
 		else
 			file = argv.seq + "-error" + bucket;
 
-		fs.appendFileSync(file + ".seq", afterSeq + "\n");
+		fs.appendFileSync(file + ".seq", afterSeq.join(' ') + "\n");
 
 	}
 
@@ -115,7 +109,6 @@ lineReader.on('line', function (line) {
 
 /* Create the vocab file, since the input has finished. */
 lineReader.on('close', (input) => {
-	let vocab = code2seq.getVocab();
 	fse.ensureFileSync(argv.vocab);
 	fs.writeFileSync(argv.vocab, [...vocab].join("\n"));
 });

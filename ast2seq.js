@@ -67,7 +67,7 @@ lineReader.on('line', function (line) {
 		if(beforeAST !== null)
 			beforeSeq = esseq.generate(beforeAST);
 		else
-			beforeSeq = "";
+			beforeSeq = [];
 		afterSeq = esseq.generate(afterAST);
 
 		if(beforeSeq === null || afterSeq === null) continue;
@@ -81,8 +81,8 @@ lineReader.on('line', function (line) {
 			file = argv.seq + "-nominal";
 		}
 
-		fs.appendFileSync(file + ".buggy", beforeSeq + "\n");
-		fs.appendFileSync(file + ".correct", afterSeq + "\n");
+		fs.appendFileSync(file + ".buggy", beforeSeq.join(' ') + "\n");
+		fs.appendFileSync(file + ".correct", afterSeq.join(' ') + "\n");
 
 	}
 
