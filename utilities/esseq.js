@@ -300,6 +300,10 @@
 			return seq;
 		},
 
+		FunctionDeclaration: function(node) {
+			return expressionGenerator.FunctionExpression(node);
+		},
+
 		FunctionExpression: function(node) {
 			let seq = ['function'],
 				id = node.id,
@@ -444,8 +448,7 @@
 
 	function generate(node) { 
 
-		/* TODO: Recursively generate sequence for node. */
-		console.log(node);
+		/* Recursively generate sequence for node. */
 		return statementGenerator[node.type](node).join(' ');
 	
 	}
