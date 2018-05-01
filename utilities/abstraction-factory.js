@@ -2,24 +2,10 @@ const fs = require("fs");
 const esprima = require("esprima");
 const applyDepthAbstraction = require("./depth-abstraction.js");
 const applyVocabAbstraction = require("./vocab-abstraction.js"); 
-const escodegen = require("escodegen");
 
-function Code2Seq (topN) {
+function Code2Seq () {
 
 	let vocab = new Set();
-
-	/**
-	 * Helper function for converting a list of tokens to a sequence of words.
-	 */
-	function tokens2Sequence(tokens, vocab) {
-		let sequence = [];
-		for(let i = 0; i < tokens.length; i++) {
-			let token = tokens[i].value.replace("__abs__", "@").replace(/__\d+__/, "");
-			sequence.push(token);
-			vocab.add(token);
-		}
-		return sequence.join(" ") + "\n";
-	}
 
 	/**
 	 * Helper function for checking if the AST includes one function.
@@ -44,25 +30,13 @@ function Code2Seq (topN) {
 
 		/* Abstract nested functions and object literals. */
 		applyDepthAbstraction(ast, {
-			FunctionDeclaration: { type: 'Identifier', name: '__abs__function' },
-			FunctionExpression: { type: 'Identifier', name: '__abs__function' },
-			ObjectExpression: { type: 'Identifier', name: '__abs__objectlit' }
+			FunctionDeclaration: { type: 'Identifier', name: '@function' },
+			FunctionExpression: { type: 'Identifier', name: '@function' },
+			ObjectExpression: { type: 'Identifier', name: '@objectlit' }
 		}, abstractionDepth)
 
 		/* Abstract terms not in the vocabulary. */
-		applyVocabAbstraction(ast, new Set(topN));
-
-		let code = escodegen.generate(ast);
-
-		/* Generate the sequences. */
-		try {
-			ast = esprima.parse(code, { tokens: true });
-		} catch (e) {
-			console.log("error parsing abstracted code");
-			return null;
-		}
-
-		return tokens2Sequence(ast.tokens, vocab);
+		if(topN) applyVocabAbstraction(ast, new Set(topN));
 
 	}
 

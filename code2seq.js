@@ -4,9 +4,9 @@
  */
 
 const fs = require("fs");
-const Code2Seq = require("./utilities/abstraction-factory.js");
-const esprima = require("esprima");
 const fse = require('fs-extra'); const Vocab = require("./utilities/vocab-factory.js");
+const Code2Seq = require("./utilities/abstraction-factory.js");
+const esseq = require("./utilities/esseq.js");
 
 /* Set up the command line options. */
 var argv = require('yargs')
@@ -40,7 +40,7 @@ var lineReader = require('readline').createInterface({
 
 let ctr = 0;
 let topN = fs.readFileSync(argv.topn, 'utf-8').split("\n"); // Top N non-reserved words
-let code2seq = new Code2Seq(topN);
+let code2seq = new Code2Seq();
 let bucketAssignments = new Map(); // Quickly lookup which bucket a project is assigned to
 
 fse.ensureFileSync(argv.seq + ".buggy");
@@ -69,27 +69,24 @@ lineReader.on('line', function (line) {
 	for(let j = 0; j < comfile.sliceChangePair.length; j++) {
 
 		let pair = comfile.sliceChangePair[j];
-		let beforeAST = null,
+		let beforeAST = pair['before-ast'],
 				beforeSeq = null;
-		let afterAST = null,
+		let afterAST = pair['after-ast'],
 				aterSeq = null;
-
-		let beforeCode = pair.before.replace(/^function\s*\(/, "function __abs__dummy(");
-		let afterCode = pair.after.replace(/^function\s*\(/, "function __abs__dummy(");
 
 		let file = null;
 
-		try {
-			beforeAST = esprima.parse(beforeCode);
-			afterAST = esprima.parse(afterCode);
-		} catch (e) {
-			console.log("skipping unparsable code");
-			continue; // Skip stuff that can't be parsed.
-		}
-
 		/* Build the abstracted sequences. */
-		beforeSeq = code2seq.ast2Seq(beforeAST, topN);
-		afterSeq = code2seq.ast2Seq(afterAST, topN);
+		if(beforeAST !== null)
+			code2seq.ast2Seq(beforeAST, topN);
+		code2seq.ast2Seq(afterAST, topN);
+
+		/* Convert the AST into a word sequence. */
+		if(beforeAST !== null)
+			beforeSeq = esseq.generate(beforeAST);
+		else
+			beforeSeq = "";
+		afterSeq = esseq.generate(afterAST);
 
 		if(beforeSeq === null || afterSeq === null) continue;
 
@@ -101,15 +98,16 @@ lineReader.on('line', function (line) {
 
 		if(pair.type === "NOMINAL")
 			file = argv.seq + "-nominal" + bucket;
-		else if(pair.type === "MUTANT_REPAIR")
+		else if(pair.type === "MUTATION_CANDIDATE")
+			file = argv.seq + "-candidate" + bucket;
+		else if(pair.type === "MUTANT")
 			file = argv.seq + "-mutant" + bucket;
 		else if(pair.type === "REPAIR")
 			file = argv.seq + "-repair" + bucket;
 		else
 			file = argv.seq + "-error" + bucket;
 
-		fs.appendFileSync(file + ".buggy", beforeSeq);
-		fs.appendFileSync(file + ".correct", afterSeq);
+		fs.appendFileSync(file + ".seq", afterSeq);
 
 	}
 

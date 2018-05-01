@@ -217,7 +217,7 @@
 		},
 
 		Literal: function(node) {
-			return [node.raw.replace(/\s+/g, '%20')];
+			return [node.raw.replace(/\s+/g, '_')];
 		},
 
 		ArrayExpression: function(node) {

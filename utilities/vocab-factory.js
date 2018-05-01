@@ -3,10 +3,12 @@
 const esprima = require("esprima");
 const walk = require("estree-walk");
 const TrieHeap = require("./trietree.js");
+const Code2Seq = require("./abstraction-factory.js");
 
 function Vocab (vocabSize) {
 
 	let topvocab = new TrieHeap(vocabSize);
+	let code2seq = new Code2Seq();
 	let ctr = 0;
 
 	/**
@@ -19,7 +21,7 @@ function Vocab (vocabSize) {
 				},
 				Literal: function(node, stop) { 
 					if(node.value === Object(node.value)) return; // Avoid RegEx
-					topvocab.incrementWordCount(node.raw);
+					topvocab.incrementWordCount(node.raw.replace(/\s+/g, '_'));
 				}
 			});
 	}
@@ -53,17 +55,14 @@ function Vocab (vocabSize) {
 		/* Iterate through code pairs. */
 		for(let j = 0; j < comfile.sliceChangePair.length; j++) {
 
-			let pair = comfile.sliceChangePair[j];
-			let beforeAST = null;
-			let afterAST = null;
+			let pair = comfile.sliceChangePair[j],
+				beforeAST = pair['before-ast'],
+				afterAST = pair['after-ast'];
 
-			if(pair.type !== "MUTANT_REPAIR") continue; // The vocab should specialize in the repair sequences
+			/* The vocab should specialize in sequences with try statements. */
+			if(!pair.labels.includes("MUTATION_CANDIDATE")) continue;
 
-			try {
-				afterAST = esprima.parse(pair.after);
-			} catch (e) {
-				continue; // Skip stuff that can't be parsed.
-			}
+			code2seq.ast2Seq(afterAST, null);
 
 			this.add(afterAST);
 

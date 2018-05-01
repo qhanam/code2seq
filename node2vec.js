@@ -4,7 +4,8 @@
  */
 
 const fs = require("fs");
-const fse = require('fs-extra'); const Vocab = require("./utilities/vocab-factory.js");
+const fse = require('fs-extra'); 
+const Vocab = require("./utilities/vocab-factory.js");
 
 /* Set up the command line options. */
 var argv = require('yargs')
