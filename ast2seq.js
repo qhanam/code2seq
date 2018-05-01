@@ -35,7 +35,7 @@ let ctr = 0;
 fse.ensureFileSync(argv.seq + ".buggy");
 fse.ensureFileSync(argv.seq + ".correct");
 
-/* Process a commit-file. */
+	/* Process a commit-file. */
 lineReader.on('line', function (line) {
 
 	/* Read the sequence pairs for this commit-file. */

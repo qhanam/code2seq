@@ -12,6 +12,7 @@
 		 return a;
  	}
 
+	/* Functions for turning statements into sequences. */
 	statementGenerator = {
 
 		Program: function(node) {
@@ -20,7 +21,7 @@
 
 			for(let i = 0; i < node.body.length; i++) {
 				let stmt = node.body[i];
-				join(seq, statementGenerator[stmt.type](stmt));
+				join(seq, generateStatement(stmt));
 			}
 
 			return seq;
@@ -31,7 +32,7 @@
 			let seq = ['{'];
 			for(let i = 0; i < node.body.length; i++) {
 				let stmt = node.body[i];
-				join(seq, statementGenerator[stmt.type](stmt));
+				join(seq, generateStatement(stmt));
 			}
 			seq.push('}');
 			return seq;
@@ -50,21 +51,21 @@
 
 		ExpressionStatement: function(node) {
 			let expression = node.expression;
-			let seq = expressionGenerator[expression.type](expression);
+			let seq = generateExpression(expression);
 			seq.push(';');
 			return seq;
 		},
 
 		BreakStatement: function(node) {
 			let seq = ['break'], label = node.label;
-			if(label !== null) join(seq,expressionGenerator[label.type](label));
+			if(label !== null) join(seq, generateExpression(label));
 			seq.push(';');
 			return seq;
 		},
 
 		ContinueStatement: function(node) {
 			let seq = ['continue'], label = node.label;
-			if(label !== null) join(seq,expressionGenerator[label.type](label));
+			if(label !== null) join(seq, generateExpression(label));
 			seq.push(';');
 			return seq;
 		},
@@ -73,9 +74,9 @@
 			let seq = ['while','('], 
 				test = node.test, 
 				body = node.body;
-			join(seq, expressionGenerator[test.type](test));
+			join(seq, generateExpression(test));
 			seq.push(')');
-			join(seq, statementGenerator[body.type](body));
+			join(seq, generateStatement(body));
 			return seq;
 		},
 
@@ -83,9 +84,9 @@
 			let seq = ['do'],
 				test = node.test,
 				body = node.body;
-			join(seq, statementGenerator[body.type](body));
+			join(seq, generateStatement(body));
 			join(seq, ['while','(']);
-			join(seq, expressionGenerator[test.type](test));
+			join(seq, generateExpression(test));
 			seq.push(')');
 			return seq;
 		},
@@ -98,9 +99,9 @@
 			let seq = [],
 				label = node.label,
 				body = node.body;
-			join(seq, expressionGenerator[label.type](label));
+			join(seq, generateExpression(label));
 			seq.push(':');
-			join(seq, statementGenerator[body.type](body));
+			join(seq, generateStatement(body));
 			return seq;
 		},
 
@@ -110,13 +111,13 @@
 				test = node.test,
 				update = node.update,
 				body = node.body;
-			if(init !== null) join(seq, expressionGenerator[init.type](init));
+			if(init !== null) join(seq, generateExpression(init));
 			seq.push(';');
-			if(test !== null) join(seq, expressionGenerator[test.type](test));
+			if(test !== null) join(seq, generateExpression(test));
 			seq.push(';');
-			if(update !== null) join(seq, expressionGenerator[update.type](update));
+			if(update !== null) join(seq, generateExpression(update));
 			seq.push(')');
-			join(seq, statementGenerator[body.type](body));
+			join(seq, generateStatement(body));
 			return seq;
 		},
 
@@ -125,11 +126,11 @@
 				left = node.left,
 				right = node.right,
 				body = node.body;
-			join(seq, expressionGenerator[left.type](left));
+			join(seq, generateExpression(left));
 			seq.push('in');
-			join(seq, expressionGenerator[right.type](right));
+			join(seq, generateExpression(right));
 			seq.push(')');
-			join(seq, statementGenerator[body.type](body));
+			join(seq, generateStatement(body));
 			return seq;
 		},
 
@@ -138,12 +139,12 @@
 				test = node.test,
 				consequent = node.consequent,
 				alternate = node.alternate;
-			join(seq, expressionGenerator[test.type](test));
+			join(seq, generateExpression(test));
 			seq.push(')');
-			join(seq, statementGenerator[consequent.type](consequent));
+			join(seq, generateStatement(consequent));
 			if(alternate !== null) {
 				seq.push('else');
-				join(seq, statementGenerator[alternate.type](alternate));
+				join(seq, generateStatement(alternate));
 			}
 			return seq;
 		},
@@ -155,7 +156,7 @@
 		ReturnStatement: function(node) {
 			let seq = ['return'],
 				argument = node.argument;
-			if(argument !== null) join(seq, expressionGenerator[argument.type](argument));
+			if(argument !== null) join(seq, generateExpression(argument));
 			seq.push(';');
 			return seq;
 		},
@@ -164,12 +165,12 @@
 			let seq = ['switch','('],
 				discriminant = node.discriminant,
 				cases = node.cases;
-			join(seq, expressionGenerator[discriminant.type](discriminant));
+			join(seq, generateExpression(discriminant));
 			seq.push(')');
 			seq.push('{');
 			for(let i = 0; i < cases.length; i++) {
 				let cas = cases[i];
-				join(seq, expressionGenerator[cas.type](cas));
+				join(seq, generateExpression(cas));
 			}
 			seq.push('}');
 			return seq;
@@ -178,7 +179,7 @@
 		ThrowStatement: function(node) {
 			let seq = ['throw'],
 				argument = node.argument;
-			join(seq, expressionGenerator[argument.type](argument));
+			join(seq, generateExpression(argument));
 			seq.push(';');
 			return seq;
 		},
@@ -188,17 +189,18 @@
 				block = node.block,
 				handler = node.handler,
 				finalizer = node.finalizer;
-			join(seq, statementGenerator[block.type](block));
-			join(seq, expressionGenerator[handler.type](handler));
+			join(seq, generateStatement(block));
+			join(seq, generateExpression(handler));
 			if(finalizer !== null) {
 				seq.push('finally');
-				join(seq, statementGenerator[finalizer.type](finalizer));
+				join(seq, generateStatement(finalizer));
 			}
 			return seq;
 		}
 
 	};
 
+	/* Functions for turning expressions into sequences. */
 	expressionGenerator = {
 
 		VariableDeclarator: function(node) {
@@ -222,7 +224,7 @@
 			let seq = ['['];
 			for(let i = 0; i < node.elements.length; i++) {
 				let element = node.elements[i];	
-				join(seq, expressionGenerator[element.type](element));
+				join(seq, generateExpression(element));
 				if(i !== node.elements.length - 1) seq.push(',');
 			}
 			seq.push(']');
@@ -231,9 +233,9 @@
 
 		AssignmentExpression: function(node) {
 			let left = node.left, right = node.right, seq = [];
-			join(seq, expressionGenerator[left.type](left));
+			join(seq, generateExpression(left));
 			seq.push(node.operator);
-			join(seq, expressionGenerator[right.type](right));
+			join(seq, generateExpression(right));
 			return seq;
 		},
 
@@ -242,11 +244,11 @@
 				test = node.test,
 				consequent = node.consequent,
 				alternate = node.alternate;
-			join(seq, expressionGenerator[test.type](test));
+			join(seq, generateExpression(test));
 			seq.push('?');
-			join(seq, expressionGenerator[consequent.type](consequent));
+			join(seq, generateExpression(consequent));
 			seq.push(':');
-			join(seq, expressionGenerator[alternate.type](alternate));
+			join(seq, generateExpression(alternate));
 			return seq;
 		},
 
@@ -254,15 +256,15 @@
 			let seq = [],
 				object = node.object,
 				property = node.property;
-			join(seq, expressionGenerator[object.type](object));
+			join(seq, generateExpression(object));
 			if(node.computed) {
 				seq.push('[');
-				join(seq, expressionGenerator[property.type](property));
+				join(seq, generateExpression(property));
 				seq.push(']');
 			}
 			else {
 				seq.push('.');
-				join(seq, expressionGenerator[property.type](property));
+				join(seq, generateExpression(property));
 			}
 			return seq;
 		},
@@ -273,7 +275,7 @@
 
 			for(let i = 0; i < node.declarations.length; i++) {
 				let declarator = node.declarations[i];
-				join(seq, expressionGenerator[declarator.type](declarator));
+				join(seq, generateExpression(declarator));
 				if(i !== node.declarations.length - 1) seq.push(',');
 			}
 
@@ -289,11 +291,11 @@
 			let seq = [],
 				callee = node.callee,
 				args = node.arguments;
-			join(seq, expressionGenerator[callee.type](callee));
+			join(seq, generateExpression(callee));
 			seq.push('(');
 			for(let i = 0; i < args.length; i++) {
 				let arg = args[i];
-				join(seq, expressionGenerator[arg.type](arg));
+				join(seq, generateExpression(arg));
 				if(i !== args.length - 1) seq.push(',');
 			}
 			seq.push(')');
@@ -309,15 +311,15 @@
 				id = node.id,
 				params = node.params,
 				body = node.body;
-			if(id !== null)	join(seq, expressionGenerator[id.type](id));
+			if(id !== null)	join(seq, generateExpression(id));
 			seq.push('(');
 			for(let i = 0; i < params.length; i++) {
 				let param = params[i];
-				join(seq, expressionGenerator[param.type](param));
+				join(seq, generateExpression(param));
 				if(i !== params.length - 1) seq.push(',');
 			}
 			seq.push(')');
-			join(seq, statementGenerator[body.type](body));
+			join(seq, generateStatement(body));
 			return seq;
 		},
 
@@ -326,9 +328,9 @@
 				operator = node.operator,
 				left = node.left,
 				right = node.right;
-			join(seq, expressionGenerator[left.type](left));
+			join(seq, generateExpression(left));
 			seq.push(operator);
-			join(seq, expressionGenerator[right.type](right));
+			join(seq, generateExpression(right));
 			return seq;
 		},
 
@@ -348,11 +350,11 @@
 			let seq = ['new'],
 				callee = node.callee,
 				args = node.arguments;
-			join(seq, expressionGenerator[callee.type](callee));
+			join(seq, generateExpression(callee));
 			seq.push('(');
 			for(let i = 0; i < args.length; i++) {
 				let arg = args[i];
-				join(seq, expressionGenerator[arg.type](arg));
+				join(seq, generateExpression(arg));
 				if(i !== args.length - 1) seq.push(',');
 			}
 			seq.push(')');
@@ -364,7 +366,7 @@
 				properties = node.properties;
 			for(let i = 0; i < properties.length; i++) {
 				let property = properties[i];
-				join(seq, expressionGenerator[property.type](property));
+				join(seq, generateExpression(property));
 				if(i !== properties.length - 1) seq.push(',');
 			}
 			seq.push('}');
@@ -381,14 +383,14 @@
 				shorthand = node.shorthand;
 			if(computed) {
 				seq.push('[');
-				join(seq, expressionGenerator[key.type](key));
+				join(seq, generateExpression(key));
 				seq.push(']');
 			}
 			else {
-				join(seq, expressionGenerator[key.type](key));
+				join(seq, generateExpression(key));
 			}
 			seq.push(':');
-			join(seq, expressionGenerator[value.type](value));
+			join(seq, generateExpression(value));
 			return seq;
 		},
 
@@ -401,12 +403,12 @@
 			}
 			else {
 				seq.push('case');
-				join(seq, expressionGenerator[test.type](test));
+				join(seq, generateExpression(test));
 			}
 			seq.push(':');
 			for(let i = 0; i < consequent.length; i++) {
 				let stmt = consequent[i];
-				join(seq, statementGenerator[stmt.type](stmt));
+				join(seq, generateStatement(stmt));
 			}
 			return seq;
 		},
@@ -415,9 +417,9 @@
 			let seq = ['catch','('],
 				param = node.param,
 				body = node.body;
-			join(seq, expressionGenerator[param.type](param));
+			join(seq, generateExpression(param));
 			seq.push(')');
-			join(seq, statementGenerator[body.type](body));
+			join(seq, generateStatement(body));
 			return seq;
 		},
 
@@ -427,7 +429,7 @@
 				argument = node.argument,
 				prefix = node.prefix;
 			if(prefix) seq.push(operator);
-			join(seq, expressionGenerator[argument.type](argument));
+			join(seq, generateExpression(argument));
 			if(!prefix) seq.push(operator);
 			return seq;
 		},
@@ -440,17 +442,70 @@
 			let seq = ['yield'],
 				argument = node.argument,
 				delegate = node.delegate;
-			if(argument !== null) join(seq, expressionGenerator[argument.type](argument));
+			if(argument !== null) join(seq, generateExpression(argument));
 			return seq;
 		}
 
 	};
 
+	/** Generates the word sequence for a statement subtree. */
+	function generateStatement(node) {
+
+		let change = node['change-noprop'],
+			seq = statementGenerator[node.type](node);
+
+		switch(change) {
+			case 'INSERTED':
+			case 'REMOVED':
+			case 'UPDATED':
+				/* Wrap the sequence with the change. */
+				seq.unshift('~' + change + '_START~');
+				seq.push('~' + change + '_END~');
+			case 'MOVED':
+			case 'UNCHANGED':
+			case 'INHERITED':
+			case 'UNKNOWN':
+			default:
+		}
+
+		return seq;
+
+	}
+
+	/** Generates the word sequence for an expression subtree. */
+	function generateExpression(node) {
+
+		let change = node['change-noprop'],
+			seq = expressionGenerator[node.type](node);
+
+		switch(change) {
+			case 'INSERTED':
+			case 'REMOVED':
+			case 'UPDATED':
+				/* Wrap the sequence with the change. */
+				seq.unshift('~' + change + '_START~');
+				seq.push('~' + change + '_END~');
+			case 'MOVED':
+			case 'UNCHANGED':
+			case 'INHERITED':
+			case 'UNKNOWN':
+			default:
+		}
+
+		return seq;
+
+	}
+
+	/** Generates the word sequence for an AST. */
 	function generate(node) { 
 
+		if(node.type === 'FunctionDeclaration'
+			&& node['change-noprop'] === 'INHERITED')
+			node['change-noprop'] = node.change;
+
 		/* Recursively generate sequence for node. */
-		return statementGenerator[node.type](node).join(' ');
-	
+		return generateStatement(node).join(' ');
+
 	}
 
 	exports.generate = generate;
