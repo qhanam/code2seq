@@ -72,6 +72,8 @@ lineReader.on('line', function (line) {
 
 		let file = null;
 
+		let mutants = [];
+
 		/* Build the abstracted sequences. */
 		code2seq.ast2Seq(afterAST, topN);
 
@@ -82,6 +84,12 @@ lineReader.on('line', function (line) {
 		/* Update the vocab with the words in the sequence. */
 		for(let i = 0; i < afterSeq.length; i++) {
 			vocab.add(afterSeq[i]);
+		}
+
+		/* Is this mutable? If it is then we need to search for and remove inserted
+		 * try statements one by one. */
+		if(pair.labels.includes("MUTATION_CANDIDATE")) {
+			// TODO
 		}
 
 		/* Store the sequence in a file. We have a few rules to consider:
