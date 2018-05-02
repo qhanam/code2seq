@@ -45,6 +45,28 @@ function MutateTry (ast) {
 
 			return oldBody;
 			
+		},
+
+		IfStatement: function(owner, statement) {
+			let oldBody = owner.consequent, 
+				tryblock = statement.block;
+			/* The if statement only controls the execution of one statement, which
+			 * is the try block. */
+			if(tryblock.body.length === 1) {
+				if(statement['change-noprop'] === 'INSERTED' 
+					&& tryblock.body[0]['change-noprop'] === 'INHERITED') {
+						tryblock.body[0]['change-noprop'] = 'INSERTED';	
+				}
+				owner.consequent = tryblock.body[0];
+			}
+			else {
+				if(statement['change-noprop'] === 'INSERTED' 
+					&& tryblock['change-noprop'] === 'INHERITED') {
+						tryblock['change-noprop'] = 'INSERTED';	
+				}
+				owner.consequent = tryblock.body;
+			}
+			return oldBody;
 		}
 
 	}
@@ -71,6 +93,13 @@ function MutateTry (ast) {
 				if(body[i]['change-noprop'] === 'INSERTED') {
 					body[i]['change-noprop'] = 'INHERITED';
 				}
+			}
+		},
+
+		IfStatement: function(owner, oldBody, statement) {
+			owner.consequent = statement;
+			if(statement.block['change-noprop'] = 'INSERTED') {
+				statement.block['change-noprop'] = 'INHERITED'
 			}
 		}
 
@@ -112,6 +141,10 @@ function MutateTry (ast) {
 
 		WithStatement: function(node) { 
 			findMutables(node, node.body);
+		},
+
+		IfStatement: function(node) {
+			findMutables(node, node.consequent);
 		},
 
 		SwitchStatement: function(node) {
