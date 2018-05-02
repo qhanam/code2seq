@@ -73,8 +73,6 @@ lineReader.on('line', function (line) {
 
 		let file = null;
 
-		let mutants = [];
-
 		/* Build the abstracted sequences. */
 		code2seq.ast2Seq(afterAST, topN);
 
@@ -90,8 +88,13 @@ lineReader.on('line', function (line) {
 		/* Is this mutable? If it is then we need to search for and remove inserted
 		 * try statements one by one. */
 		if(pair.labels.includes("MUTATION_CANDIDATE")) {
-			let mutateTry = new MutateTry(afterAST);
-			while(mutateTry.getNextMutant());
+			let mutateTry = new MutateTry(afterAST),
+				seq = mutateTry.getNextMutant();
+			while(seq !== null) {
+				file = argv.seq + "-mutant" + bucket;
+				fs.appendFileSync(file + ".seq", seq.join(' ') + "\n");
+				seq = mutateTry.getNextMutant();
+			}
 		}
 
 		/* Store the sequence in a file. We have a few rules to consider:
@@ -104,8 +107,6 @@ lineReader.on('line', function (line) {
 			file = argv.seq + "-nominal" + bucket;
 		else if(pair.labels.includes("MUTATION_CANDIDATE"))
 			file = argv.seq + "-candidate" + bucket;
-		else if(pair.labels.includes("MUTANT"))
-			file = argv.seq + "-mutant" + bucket;
 		else if(pair.labels.includes("REPAIR"))
 			file = argv.seq + "-repair" + bucket;
 		else

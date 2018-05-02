@@ -30,6 +30,10 @@ function MutateTry (ast) {
 					 * correct position in the owner's block. */
 					let body = statement.block.body;
 					for(let j = 0; j < body.length; j++) {
+						if(statement['change-noprop'] === 'INSERTED' 
+							&& body[j]['change-noprop'] === 'INHERITED') {
+								body[j]['change-noprop'] = 'INSERTED';
+						}
 						newBody.push(body[j]);
 					}
 
@@ -50,12 +54,24 @@ function MutateTry (ast) {
 	 */
 	let  restoreTryTo = {
 
-		Program: function(owner, oldBody) {
+		Program: function(owner, oldBody, statement) {
+			let body = statement.block.body;
 			owner.body = oldBody;
+			for(let i = 0; i < body.length; i++) {
+				if(body[i]['change-noprop'] === 'INSERTED') {
+					body[i]['change-noprop'] = 'INHERITED';
+				}
+			}
 		},
 
-		BlockStatement: function(owner, oldBody) {
+		BlockStatement: function(owner, oldBody, statement) {
+			let body = statement.block.body;
 			owner.body = oldBody;
+			for(let i = 0; i < body.length; i++) {
+				if(body[i]['change-noprop'] === 'INSERTED') {
+					body[i]['change-noprop'] = 'INHERITED';
+				}
+			}
 		}
 
 	}
@@ -126,7 +142,6 @@ function MutateTry (ast) {
 			/* First, register this statement as mutable if it meets requirements. */
 			if(statement.type === 'TryStatement' && statement.change === 'INSERTED') {
 				mutables.push({ owner: owner, statement: statement });
-				console.log('Found TryStatement to mutate.');
 			}
 
 			/* Second, recursively visit statements with nested blocks. */
@@ -143,6 +158,7 @@ function MutateTry (ast) {
 	 * @return the next mutant AST, or {@code null} if there are no more.
 	 */
 	this.getNextMutant = function () {
+
 		let mutable,
 			owner,
 			statement,
@@ -153,7 +169,7 @@ function MutateTry (ast) {
 			mutable = mutables[currentMutant];
 			currentMutant++;
 		}
-		else return false;
+		else return null;
 
 		owner = mutable.owner;
 		statement = mutable.statement;
@@ -161,21 +177,14 @@ function MutateTry (ast) {
 		/* Ignore ower types that we do not yet handle. */
 		if(removeTryFrom[owner.type] === undefined) return true;
 
-		seq = esseq.generate(ast);
-		console.log("Oringial");
-		console.log(seq.join(' '));
+		/* Perform the mutation, build the sequence, then restore the original AST. */
 		original = removeTryFrom[owner.type](owner, statement);
 		seq = esseq.generate(ast);
-		console.log("Mutated");
-		console.log(seq.join(' '));
-		restoreTryTo[owner.type](owner, original);
-		seq = esseq.generate(ast);
-		console.log("Restored");
-		console.log(seq.join(' '));
+		restoreTryTo[owner.type](owner, original, statement);
 
-		return true;
+		return seq;
+
 	}
-
 
 }
 
