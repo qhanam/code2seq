@@ -91,6 +91,7 @@ lineReader.on('line', function (line) {
 		 * try statements one by one. */
 		if(pair.labels.includes("MUTATION_CANDIDATE")) {
 			let mutateTry = new MutateTry(afterAST);
+			while(mutateTry.getNextMutant());
 		}
 
 		/* Store the sequence in a file. We have a few rules to consider:

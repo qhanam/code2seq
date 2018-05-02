@@ -1,3 +1,4 @@
+const esseq = require("./esseq.js");
 
 function MutateTry (ast) {
 
@@ -5,6 +6,59 @@ function MutateTry (ast) {
 		mutables = [];
 
 	/* PRIVATE */
+
+	/**
+	 * Removes a try statement to its owner.
+	 */
+	let removeTryFrom = {
+
+		Program: function(owner, statement) { 
+			return removeTryFrom.BlockStatement(owner, statement);
+		},
+
+		BlockStatement: function(owner, statement) { 
+
+			let oldBody = owner.body, newBody = [];
+
+			for(let i = 0; i < oldBody.length; i++) {
+
+				let current = owner.body[i];
+				if(current !== statement) newBody.push(current);
+				else {
+
+					/* We need to pull all the statements in the try block into the
+					 * correct position in the owner's block. */
+					let body = statement.block.body;
+					for(let j = 0; j < body.length; j++) {
+						newBody.push(body[j]);
+					}
+
+				}
+
+			}
+
+			owner.body = newBody;
+
+			return oldBody;
+			
+		}
+
+	}
+
+	/**
+	 * Restores a try statement to its owner.
+	 */
+	let  restoreTryTo = {
+
+		Program: function(owner, oldBody) {
+			owner.body = oldBody;
+		},
+
+		BlockStatement: function(owner, oldBody) {
+			owner.body = oldBody;
+		}
+
+	}
 
 	/**
 	 * Visits child statements.
@@ -89,18 +143,39 @@ function MutateTry (ast) {
 	 * @return the next mutant AST, or {@code null} if there are no more.
 	 */
 	this.getNextMutant = function () {
-		let mutable;
-		
-		if(currentMutant < mutables.length) mutable = mutables[currentMutant];
-		else return null;
+		let mutable,
+			owner,
+			statement,
+			original,
+			seq;
 
-		// TODO: Generate the next mutant
-		
-		// TODO: Restore the AST to its original form.
+		if(currentMutant < mutables.length) {
+			mutable = mutables[currentMutant];
+			currentMutant++;
+		}
+		else return false;
 
-		currentMutant++;
-		return ast;
+		owner = mutable.owner;
+		statement = mutable.statement;
+
+		/* Ignore ower types that we do not yet handle. */
+		if(removeTryFrom[owner.type] === undefined) return true;
+
+		seq = esseq.generate(ast);
+		console.log("Oringial");
+		console.log(seq.join(' '));
+		original = removeTryFrom[owner.type](owner, statement);
+		seq = esseq.generate(ast);
+		console.log("Mutated");
+		console.log(seq.join(' '));
+		restoreTryTo[owner.type](owner, original);
+		seq = esseq.generate(ast);
+		console.log("Restored");
+		console.log(seq.join(' '));
+
+		return true;
 	}
+
 
 }
 
