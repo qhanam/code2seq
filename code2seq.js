@@ -6,6 +6,7 @@
 const fs = require("fs");
 const fse = require('fs-extra'); const Vocab = require("./utilities/vocab-factory.js");
 const Code2Seq = require("./utilities/abstraction-factory.js");
+const MutateTry = require("./utilities/mutation-factory.js");
 const esseq = require("./utilities/esseq.js");
 
 /* Set up the command line options. */
@@ -89,7 +90,7 @@ lineReader.on('line', function (line) {
 		/* Is this mutable? If it is then we need to search for and remove inserted
 		 * try statements one by one. */
 		if(pair.labels.includes("MUTATION_CANDIDATE")) {
-			// TODO
+			let mutateTry = new MutateTry(afterAST);
 		}
 
 		/* Store the sequence in a file. We have a few rules to consider:
