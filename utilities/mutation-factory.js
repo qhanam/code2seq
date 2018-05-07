@@ -133,6 +133,35 @@ function MutateTry (ast) {
 				owner.body = tryblock;
 			}
 			return oldBody;
+		},
+
+		SwitchCase: function(owner, statement) {
+			let oldBody = owner.consequent, newBody = [];
+
+			for(let i = 0; i < oldBody.length; i++) {
+
+				let current = owner.consequent[i];
+				if(current !== statement) newBody.push(current);
+				else {
+
+					/* We need to pull all the statements in the try block into the
+					 * correct position in the owner's block. */
+					let body = statement.block.body;
+					for(let j = 0; j < body.length; j++) {
+						if(statement['change-noprop'] === 'INSERTED' 
+							&& body[j]['change-noprop'] === 'INHERITED') {
+								body[j]['change-noprop'] = 'INSERTED';
+						}
+						newBody.push(body[j]);
+					}
+
+				}
+
+			}
+
+			owner.consequent = newBody;
+
+			return oldBody;
 		}
 
 	}
@@ -188,6 +217,16 @@ function MutateTry (ast) {
 			if(statement.block['change-noprop'] = 'INSERTED') {
 				statement.block['change-noprop'] = 'INHERITED'
 			}
+		},
+
+		SwitchCase: function(owner, oldBody, statement) {
+			let body = statement.block.body;
+			owner.consequent = oldBody;
+			for(let i = 0; i < body.length; i++) {
+				if(body[i]['change-noprop'] === 'INSERTED') {
+					body[i]['change-noprop'] = 'INHERITED';
+				}
+			}
 		}
 
 	}
@@ -212,7 +251,8 @@ function MutateTry (ast) {
 
 		BlockStatement: function(node) { 
 			for(let i = 0; i < node.body.length; i++)
-				findMutables(node, node.body[i]); },
+				findMutables(node, node.body[i]); 
+		},
 
 		WhileStatement: function(node) { 
 			findMutables(node, node.body);
@@ -240,7 +280,8 @@ function MutateTry (ast) {
 		},
 
 		SwitchCase: function(node) { 
-			findMutables(node, node.consequent);
+			for(let i = 0; i < node.consequent.length; i++)
+				findMutables(node, node.consequent[i]); 
 		},
 
 		TryStatement: function(node) {
