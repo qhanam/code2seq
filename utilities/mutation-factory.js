@@ -111,6 +111,28 @@ function MutateTry (ast) {
 				owner.body = tryblock;
 			}
 			return oldBody;
+		},
+
+		ForInStatement: function(owner, statement) {
+			let oldBody = owner.body,
+				tryblock = statement.block;
+			/* The while loop only controls the execution of one statement, which
+			 * is the try block. */
+			if(tryblock.body.length === 1) {
+				if(statement['change-noprop'] === 'INSERTED'
+					&& tryblock.body[0]['change-noprop'] === 'INHERITED') {
+						tryblock.body[0]['change-noprop'] = 'INSERTED';
+				}
+				owner.body = tryblock.body[0];
+			}
+			else {
+				if(statement['change-noprop'] === 'INSERTED' 
+					&& tryblock['change-noprop'] === 'INHERITED') {
+						tryblock['change-noprop'] = 'INSERTED';	
+				}
+				owner.body = tryblock;
+			}
+			return oldBody;
 		}
 
 	}
@@ -155,6 +177,13 @@ function MutateTry (ast) {
 		},
 
 		ForStatement: function(owner, oldBody, statement) {
+			owner.body = statement;
+			if(statement.block['change-noprop'] = 'INSERTED') {
+				statement.block['change-noprop'] = 'INHERITED'
+			}
+		},
+
+		ForInStatement: function(owner, oldBody, statement) {
 			owner.body = statement;
 			if(statement.block['change-noprop'] = 'INSERTED') {
 				statement.block['change-noprop'] = 'INHERITED'
