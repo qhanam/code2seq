@@ -18,6 +18,7 @@ var argv = require('yargs')
 	.describe('seq', 'The path the sequences will be output to')
 	.describe('vocab', 'The path the vocab will be output to')
 	.describe('buckets', 'The number of project buckets')
+	.describe('maxlen', 'The maximum length of the sequence')
 	.default('buckets', 10)
 	.help('h')
 	.alias('h', 'help')
@@ -92,7 +93,8 @@ lineReader.on('line', function (line) {
 				seq = mutateTry.getNextMutant();
 			while(seq !== null) {
 				file = argv.seq + "-mutant" + bucket;
-				fs.appendFileSync(file + ".seq", seq.join(' ') + "\n");
+				if(!argv.maxlen || seq.length <= argv.maxlen)
+					fs.appendFileSync(file + ".seq", seq.join(' ') + "\n");
 				seq = mutateTry.getNextMutant();
 			}
 		}
@@ -112,7 +114,8 @@ lineReader.on('line', function (line) {
 		else
 			file = argv.seq + "-error" + bucket;
 
-		fs.appendFileSync(file + ".seq", afterSeq.join(' ') + "\n");
+		if(!argv.maxlen || afterSeq.length <= argv.maxlen)
+			fs.appendFileSync(file + ".seq", afterSeq.join(' ') + "\n");
 
 	}
 
