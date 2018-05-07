@@ -64,7 +64,7 @@ function MutateTry (ast) {
 					&& tryblock['change-noprop'] === 'INHERITED') {
 						tryblock['change-noprop'] = 'INSERTED';	
 				}
-				owner.consequent = tryblock.body;
+				owner.consequent = tryblock;
 			}
 			return oldBody;
 		},
