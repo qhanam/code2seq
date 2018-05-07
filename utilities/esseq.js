@@ -259,6 +259,14 @@
 			return seq;
 		},
 
+		EmptyExpression: function(node) {
+			return [];
+		},
+
+		EmptyStatement: function(node) {
+			return expressionGenerator.EmptyExpression(node);
+		},
+
 		MemberExpression: function(node) {
 			let seq = [],
 				object = node.object,
@@ -292,6 +300,10 @@
 
 		EmptyExpression: function(node) {
 			return [];
+		},
+
+		XmlLiteral: function(node) {
+			return ['@xmllit'];
 		},
 
 		CallExpression: function(node) {

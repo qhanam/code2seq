@@ -78,7 +78,8 @@ lineReader.on('line', function (line) {
 		code2seq.ast2Seq(afterAST, topN);
 
 		/* Convert the AST into a word sequence. */
-		afterSeq = esseq.generate(afterAST);
+		try { afterSeq = esseq.generate(afterAST) }
+		catch(e) { console.log("code2seq error while generating sequence from AST"); }
 		if(afterSeq === null) continue;
 
 		/* Update the vocab with the words in the sequence. */
@@ -89,13 +90,17 @@ lineReader.on('line', function (line) {
 		/* Is this mutable? If it is then we need to search for and remove inserted
 		 * try statements one by one. */
 		if(pair.labels.includes("MUTATION_CANDIDATE")) {
-			let mutateTry = new MutateTry(afterAST),
-				seq = mutateTry.getNextMutant();
+			let mutateTry = new MutateTry(afterAST), seq = null;
+
+			try { seq = mutateTry.getNextMutant(); }
+			catch (e) { console.log("code2seq error while generating mutant"); }
+
 			while(seq !== null) {
 				file = argv.seq + "-mutant" + bucket;
 				if(!argv.maxlen || seq.length <= argv.maxlen)
 					fs.appendFileSync(file + ".seq", seq.join(' ') + "\n");
-				seq = mutateTry.getNextMutant();
+				try { seq = mutateTry.getNextMutant(); }
+				catch(e) { console.log("code2seq error while generating mutant"); }
 			}
 		}
 
