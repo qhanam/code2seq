@@ -50,7 +50,9 @@ let vocab = new Set();
 lineReader.on('line', function (line) {
 
 	/* Read the sequence pairs for this commit-file. */
-	let comfile = JSON.parse(line);
+	let comfile;
+	try { comfile = JSON.parse(line); }
+	catch(e) { console.log("code2seq error while parsing JSON"); return; }
 
 	/* Get the current bucket. */
 	let bucket = bucketAssignments.get(comfile.projectID);
