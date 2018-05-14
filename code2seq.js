@@ -99,8 +99,12 @@ lineReader.on('line', function (line) {
 
 			while(seq !== null) {
 				file = argv.seq + "-mutant" + bucket;
-				if(!argv.maxlen || seq.length <= argv.maxlen)
+				if(!argv.maxlen || seq.length <= argv.maxlen) {
+					fs.appendFileSync(file + ".meta", comfile.sourceFileChangeID 
+						+ ',' + comfile.projectID + ',' + comfile.commitID 
+						+ ',' + comfile.fileName + ',' + comfile.url + '\n');
 					fs.appendFileSync(file + ".seq", seq.join(' ') + "\n");
+				}
 				try { seq = mutateTry.getNextMutant(); }
 				catch(e) { console.log("code2seq error while generating mutant"); }
 			}
@@ -121,8 +125,12 @@ lineReader.on('line', function (line) {
 		else
 			file = argv.seq + "-error" + bucket;
 
-		if(!argv.maxlen || afterSeq.length <= argv.maxlen)
+		if(!argv.maxlen || afterSeq.length <= argv.maxlen) {
+			fs.appendFileSync(file + ".meta", comfile.sourceFileChangeID 
+				+ ',' + comfile.projectID + ',' + comfile.commitID 
+				+ ',' + comfile.fileName + ',' + comfile.url + '\n');
 			fs.appendFileSync(file + ".seq", afterSeq.join(' ') + "\n");
+		}
 
 	}
 
@@ -132,4 +140,8 @@ lineReader.on('line', function (line) {
 lineReader.on('close', (input) => {
 	fse.ensureFileSync(argv.vocab);
 	fs.writeFileSync(argv.vocab, [...vocab].join("\n"));
+	fse.ensureFileSync('output/buckets');
+	for(var [key, value] of bucketAssignments.entries()) {
+		fs.appendFileSync('output/buckets', key + ',' + value + '\n');
+	}
 });
